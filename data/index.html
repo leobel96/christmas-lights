@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lucine</title>
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        font: 1em sans-serif;
+      }
+      .box {
+        box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1),
+          0 4px 6px -4px rgb(0 0 0 / 0.1);
+        background-color: rgb(239, 239, 239);
+      }
+      @media only screen and (max-width: 600px) {
+        #container {
+          grid-template-rows: 10% 15% 10% 15% 10% 15% 10% auto !important;
+          grid-template-columns: 1fr !important;
+          grid-template-areas:
+          'effect-title'
+          'effect'
+          'color-title'
+          'color'
+          'brightness-title'
+          'brightness'
+          'switch-title'
+          'switch'
+          !important;
+        }
+      }
+    </style>
+    <script defer>
+      const post = (endpoint, key, value) => {
+        const formData = new FormData();
+        formData.append(key, value);
+        return fetch("http://192.168.86.168/" + endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Access-Control-Allow-Private-Network": true },
+          body: key !== null ? formData : null,
+          mode:"no-cors"
+        });
+      };
+      // -----------------------------------------------------------------------
+      //                             Event handlers
+      // -----------------------------------------------------------------------
+      const switching = (el) => {
+        if (window.on) {
+          window.on = false;
+          console.debug("Switching off");
+          el.style.color = "red";
+          post("off", null, null);
+        } else {
+          window.on = true;
+          console.debug("Switching on");
+          el.style.color = "green";
+          post("on", null, null);
+        }
+      };
+      const setColor = (hex) => {
+        if (hex === null) {
+          console.debug("Set random color");
+          post("color", "value", "random");
+        } else {
+          const color = hex.replace("#", "");
+          console.debug("Set color: ", color);
+          post("color", "value", color);
+        }
+      };
+      const setBrightness = (value) => {
+        console.debug("Set brightness: ", value);
+        post("brightness", "value", value);
+      };
+      const setEffect = (name) => {
+        console.debug("Set effect: ", name);
+        post("effect", "name", name);
+      };
+      const componentToHex = (c) => {
+        var hex = c.toString(16);
+        return hex.length == 1 ? "0" + hex : hex;
+      }
+      const rgbToHex = (r, g, b) => {
+        return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
+      }
+      // -----------------------------------------------------------------------
+      //                           Load initial states
+      // -----------------------------------------------------------------------
+      const getState = () => {
+        fetch("http://192.168.86.168/state", {
+          method: "GET",
+          headers: {
+            "Accept": "application/json"
+          },
+        })
+          .then((resp) => resp.json())
+          .then((data) => {
+            console.debug(data);
+            window.on = data["on"];
+            document.getElementById("switch").style.color = data["on"] ? "green" : "red";
+            document.getElementById("brightness").value = data["brightness"];
+            document.getElementById("color").value = rgbToHex(data["color"][0], data["color"][1], data["color"][2]);
+            document.getElementById("effect").value = data["effect"];
+          });
+      }
+      getState();
+    </script>
+  </head>
+  <body>
+    <!-- <h1>Lucine</h1> -->
+    <div
+      id="container"
+      style="
+        display: grid;
+        grid-template-rows: 10% 18% 10% 18% 10% auto;
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-areas:
+          'effect-title effect-title'
+          'effect effect'
+          'color-title brightness-title'
+          'color brightness'
+          'switch-title switch-title'
+          'switch switch';
+        grid-column-gap: 0px;
+        grid-row-gap: 0px;
+        justify-items: center;
+        height: 100%;
+        width: 80%;
+        margin: auto;
+        text-align: center;
+        align-items: center;
+      "
+    >
+      <h2 style="grid-area: effect-title">Effetto</h2>
+      <select
+        name="effect"
+        id="effect"
+        class="box"
+        style="
+          grid-area: 2 / 1 / 3 / 3;
+          border-radius: 0.5rem;
+          height: 40%;
+          width: 30%;
+          text-align: center;
+          border: none;
+          outline: none;
+        "
+        onchange="setEffect(this.value)"
+      >
+        <option value="0">Effetto 0</option>
+        <option value="1">Effetto 1</option>
+        <option value="2">Effetto 2</option>
+        <option value="3">Effetto 3</option>
+        <option value="4">Effetto 4</option>
+        <option value="5">Effetto 5</option>
+        <option value="6">Effetto 6</option>
+        <option value="7">Effetto 7</option>
+        <option value="8">Effetto 8</option>
+        <option value="9">Effetto 9</option>
+        <option value="10">Effetto 10</option>
+        <option value="11">Effetto 11</option>
+        <option value="12">Effetto 12</option>
+        <option value="carousel">Tutti</option>
+      </select>
+      <h2 style="grid-area: color-title">Colore</h2>
+      <div
+        style="
+          display: flex;
+          grid-area: color;
+          width: 100%;
+          height: 100%;
+          justify-content: space-evenly;
+          align-items: center;
+        "
+      >
+        <div
+          style="
+            overflow: hidden;
+            width: 3rem;
+            height: 3rem;
+            border-radius: 0.5rem;
+          "
+        >
+          <input
+            type="color"
+            id="color"
+            name="color"
+            style="padding: 0; width: 150%; height: 150%; margin: -25%"
+            onchange="setColor(this.value)"
+          />
+        </div>
+        <button
+          style="border: none; border-radius: 0.5rem; width: 40%; height: 30%"
+          class="box"
+          onclick="setColor(null)"
+        >
+          Random
+        </button>
+      </div>
+      <h2 style="grid-area: brightness-title">Luminosità</h2>
+      <input
+        type="range"
+        id="brightness"
+        name="brightness"
+        style="width: 90%; grid-area: brightness"
+        min=0
+        max=254
+        onchange="setBrightness(this.value)"
+      />
+      <h2 style="grid-area: switch-title">Accendi/Spegni</h2>
+      <button
+        id="switch"
+        style="
+          border-radius: 100vh;
+          width: 15vw;
+          height: fit-content;
+          border: 0px;
+          grid-area: switch;
+        "
+        class="box"
+        onclick="switching(this)"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          preserveAspectRatio="xMidYMid meet"
+          viewBox="0 0 24 24"
+        >
+          <path
+            fill="currentColor"
+            d="M12 13q-.425 0-.712-.288Q11 12.425 11 12V4q0-.425.288-.713Q11.575 3 12 3t.713.287Q13 3.575 13 4v8q0 .425-.287.712Q12.425 13 12 13Zm0 8q-1.875 0-3.512-.712q-1.638-.713-2.85-1.926q-1.213-1.212-1.926-2.85Q3 13.875 3 12q0-1.725.625-3.3q.625-1.575 1.8-2.85q.275-.3.7-.3q.425 0 .725.3q.275.275.25.687q-.025.413-.3.738q-.875.975-1.337 2.187Q5 10.675 5 12q0 2.925 2.038 4.962Q9.075 19 12 19t4.962-2.038Q19 14.925 19 12q0-1.325-.475-2.562q-.475-1.238-1.35-2.213q-.275-.3-.287-.7q-.013-.4.262-.675q.3-.3.725-.3t.7.3q1.175 1.275 1.8 2.85Q21 10.275 21 12q0 1.875-.712 3.512q-.713 1.638-1.925 2.85q-1.213 1.213-2.85 1.926Q13.875 21 12 21Z"
+          />
+        </svg>
+      </button>
+    </div>
+  </body>
+</html>
